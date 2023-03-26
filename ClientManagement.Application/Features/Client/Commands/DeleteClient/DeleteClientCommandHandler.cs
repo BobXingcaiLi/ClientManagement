@@ -20,7 +20,7 @@ public class DeleteClientCommandHandler : IRequestHandler<DeleteClientCommand, U
 
         // verify that record exists
         if (clientToDelete == null)
-            throw new NotFoundException(nameof(Client), command.Id);
+            throw new NotFoundException(nameof(clientToDelete), command.Id);
 
         // remove from database
         await _clientRepository.DeleteAsync(clientToDelete);

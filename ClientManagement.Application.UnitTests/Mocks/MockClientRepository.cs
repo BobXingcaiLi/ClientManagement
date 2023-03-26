@@ -45,7 +45,29 @@ namespace ClientManagement.Application.UnitTests.Mocks
                     clients.Add(client);
                     return Task.CompletedTask;
                 });
-            
+
+            mockRepo.Setup(r => r.DeleteAsync(It.IsAny<Client>()))
+                .Returns((Client client) =>
+                {
+                    if (clients.Any(x => x.Id == client.Id))
+                    {
+                        clients.Remove(client);
+                    }                    
+                    return Task.CompletedTask;
+                });
+
+            mockRepo.Setup(r => r.UpdateAsync(It.IsAny<Client>()))
+                .Returns((Client client) =>
+                {
+                    var existingClient = clients.FirstOrDefault(x => x.Id == client.Id);
+                    if (existingClient != null)
+                    {
+                        existingClient.Name = client.Name;
+                        existingClient.EmailAddress = client.EmailAddress;
+                    }
+                    return Task.CompletedTask;
+                });
+
             mockRepo.Setup(r => r.IsClientUnique(It.IsAny<string>()))
                 .ReturnsAsync((string name) => { 
                     return !clients.Any(q => q.Name == name);

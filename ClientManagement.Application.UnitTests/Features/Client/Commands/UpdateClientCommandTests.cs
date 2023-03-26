@@ -1,9 +1,13 @@
 ﻿using AutoMapper;
 using ClientManagement.Application.Contracts.Persistence;
+using ClientManagement.Application.Exceptions;
 using ClientManagement.Application.Features.Client.Commands.CreateClient;
+using ClientManagement.Application.Features.Client.Commands.DeleteClient;
+using ClientManagement.Application.Features.Client.Commands.UpdateClient;
 using ClientManagement.Application.Features.Client.Queries.GetAllClients;
 using ClientManagement.Application.MappingProfiles;
 using ClientManagement.Application.UnitTests.Mocks;
+using ClientManagement.Domain;
 using Moq;
 using Shouldly;
 using System;
@@ -32,15 +36,71 @@ namespace ClientManagement.Application.UnitTests.Features.Client.Commands
         }
 
         [Fact]
-        public async Task Handle_ValidClient()
+        public async Task Handle_ValidClient_ClientUpdated()
         {
-            var handler = new CreateClientCommandHandler(_mapper, _mockRepo.Object);
+            var handler = new UpdateClientCommandHandler(_mapper, _mockRepo.Object);
 
-            await handler.Handle(new CreateClientCommand() { Name = "Test1", EmailAddress = "Test1@test.com"
+            await handler.Handle(new UpdateClientCommand() { Id = 1, Name = "Alice ABC", EmailAddress = "AliceABC@Test.com"
             }, CancellationToken.None);
 
-            var Clients = await _mockRepo.Object.GetAsync();
-            Clients.Count.ShouldBe(4);
+            var client = await _mockRepo.Object.GetByIdAsync(1);
+            client.Name.ShouldBe("Alice ABC");
+            client.EmailAddress.ShouldBe("AliceABC@Test.com");
+        }
+
+        [Fact]
+        public async Task Handle_InvalidClientByIdNotAvailable_ThrowBadRequestException()
+        {
+            var handler = new UpdateClientCommandHandler(_mapper, _mockRepo.Object);
+
+            Should.Throw<BadRequestException>(async () => await handler.Handle(new UpdateClientCommand()
+            {
+                Name = "Alice ABC",
+                EmailAddress = "AliceABC@Test.com"
+            }, CancellationToken.None))
+            .Message.ShouldBe("Invalid Client");
+        }
+
+        [Fact]
+        public async Task Handle_InvalidClientByNameNotAvailable_ThrowBadRequestException()
+        {
+            var handler = new UpdateClientCommandHandler(_mapper, _mockRepo.Object);
+
+            Should.Throw<BadRequestException>(async () => await handler.Handle(new UpdateClientCommand()
+            {
+                Id = 1,
+                Name = string.Empty,
+                EmailAddress = "AliceABC@Test.com"
+            }, CancellationToken.None))
+            .Message.ShouldBe("Invalid Client");
+        }
+
+        [Fact]
+        public async Task Handle_InvalidClientByNameTooLong_ThrowBadRequestException()
+        {
+            var handler = new UpdateClientCommandHandler(_mapper, _mockRepo.Object);
+
+            Should.Throw<BadRequestException>(async () => await handler.Handle(new UpdateClientCommand()
+            {
+                Id = 1,
+                Name = "12345678901234567890123456789012345678901234567890123456789012345678901234567890",
+                EmailAddress = "AliceABC@Test.com"
+            }, CancellationToken.None))
+            .Message.ShouldBe("Invalid Client");
+        }
+
+        [Fact]
+        public async Task Handle_InvalidClientByInvalidEmail_ThrowBadRequestException()
+        {
+            var handler = new UpdateClientCommandHandler(_mapper, _mockRepo.Object);
+
+            Should.Throw<BadRequestException>(async () => await handler.Handle(new UpdateClientCommand()
+            {
+                Id = 1,
+                Name = "Alice A",
+                EmailAddress = "AliceABCTest.com"
+            }, CancellationToken.None))
+            .Message.ShouldBe("Invalid Client");
         }
     }
 }

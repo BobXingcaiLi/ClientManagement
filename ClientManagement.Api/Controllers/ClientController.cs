@@ -44,9 +44,9 @@ namespace ClientManagement.Api.Controllers
         [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> Post(CreateClientCommand Client)
+        public async Task<ActionResult> Post(CreateClientCommand client)
         {
-            var response = await _mediator.Send(Client);
+            var response = await _mediator.Send(client);
             return CreatedAtAction(nameof(Get), new { id = response });
         }
 
@@ -56,9 +56,9 @@ namespace ClientManagement.Api.Controllers
         [ProducesResponseType(400)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult> Put(UpdateClientCommand Client)
+        public async Task<ActionResult> Put(UpdateClientCommand client)
         {
-            await _mediator.Send(Client);
+            await _mediator.Send(client);
             return NoContent();
         }
 

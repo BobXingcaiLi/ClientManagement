@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
 using ClientManagement.Application.Contracts.Persistence;
+using ClientManagement.Application.Exceptions;
 using ClientManagement.Application.Features.Client.Commands.CreateClient;
+using ClientManagement.Application.Features.Client.Commands.DeleteClient;
 using ClientManagement.Application.Features.Client.Queries.GetAllClients;
+using ClientManagement.Application.Features.Client.Queries.GetClientDetail;
 using ClientManagement.Application.MappingProfiles;
 using ClientManagement.Application.UnitTests.Mocks;
 using Moq;
@@ -23,24 +26,36 @@ namespace ClientManagement.Application.UnitTests.Features.Client.Commands
         {
             _mockRepo = MockClientRepository.GetMockClientRepository();
 
-            var mapperConfig = new MapperConfiguration(c =>
-            {
-                c.AddProfile<ClientProfile>();
-            });
+            //var mapperConfig = new MapperConfiguration(c =>
+            //{
+            //    c.AddProfile<ClientProfile>();
+            //});
 
-            _mapper = mapperConfig.CreateMapper();
+            //_mapper = mapperConfig.CreateMapper();
         }
 
         [Fact]
-        public async Task Handle_ValidClient()
+        public async Task Handle_ValidClient_ClientDeleted()
         {
-            var handler = new CreateClientCommandHandler(_mapper, _mockRepo.Object);
+            var handler = new DeleteClientCommandHandler(_mockRepo.Object);
 
-            await handler.Handle(new CreateClientCommand() { Name = "Test1", EmailAddress = "Test1@test.com"
-            }, CancellationToken.None);
+            await handler.Handle(new DeleteClientCommand() { Id = 1 }, CancellationToken.None);
 
-            var Clients = await _mockRepo.Object.GetAsync();
-            Clients.Count.ShouldBe(4);
+            var clients = await _mockRepo.Object.GetAsync();
+            clients.Count.ShouldBe(2);
+            clients.Any(c => c.Id == 1).ShouldBe(false);
+        }
+
+        [Fact]
+        public void Handle_InValidClient_ThrowNotFoundException()
+        {
+            var handler = new DeleteClientCommandHandler(_mockRepo.Object);
+
+            Should.Throw<NotFoundException>(async () => await handler.Handle(new DeleteClientCommand()
+            {
+                Id = 10
+            }, CancellationToken.None))
+            .Message.ShouldBe("clientToDelete (10) was not found");
         }
     }
 }
